@@ -25,7 +25,7 @@ interface UsageLimitWarningProps {
 export default function UsageLimitWarning({ 
   onUpgrade, 
   onDismiss, 
-  checkInterval = 60000 // Check every minute
+  checkInterval = 300000 // Check every 5 minutes instead of 1 minute
 }: UsageLimitWarningProps) {
   const [usageData, setUsageData] = useState<UsageData | null>(null);
   const [showWarning, setShowWarning] = useState(false);

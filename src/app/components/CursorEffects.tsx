@@ -1,24 +1,38 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { usePerformance } from '@/context/PerformanceContext';
 
 interface CursorEffectsProps {
   enabled?: boolean;
 }
 
 const CursorEffects: React.FC<CursorEffectsProps> = ({ enabled = true }) => {
+  const { settings } = usePerformance();
   const [position, setPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [particles, setParticles] = useState<Array<{ x: number; y: number; size: number; life: number; id: string }>>([]);
   const [isOverSelected, setIsOverSelected] = useState(false);
 
-  // Track mouse position
+  // Check if effects should be enabled based on performance settings
+  const effectsEnabled = enabled && settings.cursorEffectsEnabled && !settings.highPerformanceMode;
+
+  // Track mouse position with throttling
   useEffect(() => {
-    if (!enabled) return;
+    if (!effectsEnabled) return;
+
+    let lastMouseUpdate = 0;
+    const MOUSE_THROTTLE = 16; // ~60fps limit for mouse updates
 
     const handleMouseMove = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY });
+      const now = performance.now();
       
-      // Check if we're over a selectable element
+      // Throttle mouse position updates
+      if (now - lastMouseUpdate > MOUSE_THROTTLE) {
+        setPosition({ x: e.clientX, y: e.clientY });
+        lastMouseUpdate = now;
+      }
+      
+      // Check if we're over a selectable element (less frequent)
       const target = e.target as HTMLElement;
       const isSelectable = target.classList.contains('section-selected') || 
                            target.closest('.section-selected') !== null ||
@@ -30,10 +44,10 @@ const CursorEffects: React.FC<CursorEffectsProps> = ({ enabled = true }) => {
       
       setIsOverSelected(isSelected);
       
-      // Create particles when over selected elements
-      if (isSelectable) {
-        // Throttle particle creation
-        if (Math.random() > 0.8) {
+      // Create particles when over selected elements (heavily throttled)
+      if (isSelectable && particles.length < 10 && settings.particleEffectsEnabled) { // Limit max particles
+        // More aggressive throttling for particle creation
+        if (Math.random() > 0.9) {
           const newParticle = {
             x: e.clientX,
             y: e.clientY,
@@ -42,7 +56,7 @@ const CursorEffects: React.FC<CursorEffectsProps> = ({ enabled = true }) => {
             id: `particle-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
           };
           
-          setParticles(prev => [...prev, newParticle]);
+          setParticles(prev => [...prev.slice(-5), newParticle]); // Keep only last 5 + new one
         }
       }
     };
@@ -51,27 +65,44 @@ const CursorEffects: React.FC<CursorEffectsProps> = ({ enabled = true }) => {
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [enabled]);
+  }, [effectsEnabled, settings.particleEffectsEnabled]);
 
-  // Update and remove particles
+  // Update and remove particles using requestAnimationFrame instead of setInterval
   useEffect(() => {
-    if (!enabled || particles.length === 0) return;
+    if (!effectsEnabled || particles.length === 0) return;
     
-    const interval = setInterval(() => {
-      setParticles(prev => 
-        prev
-          .map(p => ({
-            ...p,
-            life: p.life - 0.05 // Decrease life
-          }))
-          .filter(p => p.life > 0) // Remove dead particles
-      );
-    }, 50);
+    let animationFrame: number;
+    let lastUpdate = 0;
     
-    return () => clearInterval(interval);
-  }, [particles, enabled]);
+    const updateParticles = (timestamp: number) => {
+      // Throttle to 60fps for smooth animations
+      if (timestamp - lastUpdate > 16) {
+        setParticles(prev => 
+          prev
+            .map(p => ({
+              ...p,
+              life: p.life - 0.05 // Decrease life
+            }))
+            .filter(p => p.life > 0) // Remove dead particles
+        );
+        lastUpdate = timestamp;
+      }
+      
+      if (particles.length > 0) {
+        animationFrame = requestAnimationFrame(updateParticles);
+      }
+    };
+    
+    animationFrame = requestAnimationFrame(updateParticles);
+    
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [particles, effectsEnabled]);
 
-  if (!enabled) return null;
+  if (!effectsEnabled) return null;
 
   return (
     <>

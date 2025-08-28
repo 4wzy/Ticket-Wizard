@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Jira Wizard template system has been updated to use structure/format templates instead of pre-filled content examples. Templates now provide scaffolding layouts with placeholders (e.g., "{Why this exists}", "{Stakeholder name}") that guide users and AI to maintain consistency across teams.
+The Ticket Wizard template system has been updated to use structure/format templates instead of pre-filled content examples. Templates now provide scaffolding layouts with placeholders (e.g., "{Why this exists}", "{Stakeholder name}") that guide users and AI to maintain consistency across teams.
 
 ## Template Structure
 

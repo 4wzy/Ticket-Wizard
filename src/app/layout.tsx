@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import "@fontsource-variable/inter";
 import "./globals.css";
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@images/logo.png";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
+import { PerformanceProvider } from "@/context/PerformanceContext";
 import ThemeToggle from "./components/ThemeToggle";
+import PerformanceToggle from "./components/PerformanceToggle";
 import Footer from "./components/Footer";
-
-const inter = Inter({
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "TicketWizard - AI-Powered Ticket Creation",
@@ -26,10 +24,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-            className={`${inter.className} antialiased text-neutral-100 font-sans`}
+            className="antialiased text-neutral-100 font-sans"
+            style={{ fontFamily: 'Inter Variable, Inter, sans-serif' }}
           >
       <ThemeProvider>
-        <AuthProvider>
+        <PerformanceProvider>
+          <AuthProvider>
           
           <header className="sticky top-0 z-50 backdrop-blur-lg bg-gradient-to-r from-indigo-900/40 via-purple-900/45 to-pink-900/40 border-b border-purple-800/30 shadow-[0_0_25px_rgba(124,58,237,0.3)] navbar-highlight-animation">
             <div className="max-w-7xl mx-auto flex items-center justify-between py-3 px-3 sm:py-4 sm:px-6 lg:px-12">
@@ -55,6 +55,9 @@ export default function RootLayout({
 
               {/* Right: CTA */}
               <div className="flex items-center space-x-2 sm:space-x-4">
+                {/* Performance Toggle */}
+                <PerformanceToggle />
+                
                 {/* Theme Toggle */}
                 <ThemeToggle />
 
@@ -86,7 +89,8 @@ export default function RootLayout({
           {children}
           <Footer />
         
-        </AuthProvider>
+          </AuthProvider>
+        </PerformanceProvider>
       </ThemeProvider>
       </body>
     </html>
